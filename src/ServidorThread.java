@@ -3,65 +3,65 @@ import java.net.Socket;
 
 public class ServidorThread extends Thread {
 
-    private Socket socket;
-    private Tauler tauler;
+    private final Socket clientSocket;
+    private final Tauler tauler;
 
-    public ServidorThread(Socket socket) {
-        this.socket = socket;
-        this.tauler = new Tauler(); // tablero aleatorio
+    public ServidorThread(Socket clientSocket) {
+        this.clientSocket = clientSocket;
+        this.tauler = new Tauler();
     }
 
     @Override
     public void run() {
 
+        BufferedReader in = null;
+        PrintStream out = null;
+        String clientMessage;
+        boolean gameOver = false;
+
         try {
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(socket.getInputStream()));
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            out = new PrintStream(clientSocket.getOutputStream());
 
-            PrintStream out = new PrintStream(socket.getOutputStream());
-
-            out.println("Benvingut a Enfonsar la flota!");
+            out.println("Benvingut a Enfonsar la flota");
+            out.println("Introdueix una casella (ex: A1, B7, J10)");
             out.flush();
 
+            System.out.println("\nNou tauler per al client: " + clientSocket.getRemoteSocketAddress());
             tauler.mostrarTauler();
 
-            String missatge;
-            boolean gameOver = false;
+            do {
+                clientMessage = in.readLine();
 
-            while (!gameOver && (missatge = in.readLine()) != null) {
+                if (clientMessage != null) {
+                    clientMessage = clientMessage.toUpperCase().trim();
 
-                missatge = missatge.toUpperCase();
+                    String response = tauler.processarTirada(clientMessage);
 
-                String resposta = processarTirada(missatge);
+                    System.out.println("Client " + clientSocket.getRemoteSocketAddress() + " -> " + clientMessage);
+                    tauler.mostrarTauler();
 
-                tauler.mostrarTauler();
-
-                out.println(resposta);
-                out.flush();
-
-                if (tauler.noQuedenBarcos()) {
-                    out.println("HAS GUANYAT!");
+                    out.println(response);
                     out.flush();
-                    gameOver = true;
-                }
-            }
 
-            socket.close();
+                    gameOver = tauler.noQuedenBarcos();
+
+                    if (gameOver) {
+                        out.println("HAS GUANYAT! TOTS ELS VAIXELLS HAN ESTAT ENFONSATS");
+                        out.flush();
+                    }
+                }
+
+            } while (clientMessage != null && !gameOver);
 
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
+        } finally {
+            try { if (in != null) in.close(); } catch (IOException ignored) {}
+            if (out != null) out.close();
+            try { if (clientSocket != null && !clientSocket.isClosed()) clientSocket.close(); } catch (IOException ignored) {}
 
-    private String processarTirada(String casella) {
-        try {
-            int fila = casella.charAt(0) - 'A';
-            int col = Integer.parseInt(casella.substring(1)) - 1;
-
-            return tauler.disparar(fila, col);
-
-        } catch (Exception e) {
-            return "FORMAT INCORRECTE (ex: A1)";
+            System.out.println("Client desconnectat: " + clientSocket.getRemoteSocketAddress());
         }
     }
 }

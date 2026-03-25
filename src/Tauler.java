@@ -1,7 +1,8 @@
 import java.util.Random;
 
 public class Tauler {
-    public static final int MIDA = 10;
+
+    private static final int MIDA = 10;
     private final char[][] tauler;
     private final Random random;
 
@@ -21,13 +22,13 @@ public class Tauler {
     }
 
     private void colLocarFlota() {
-        colLocarVaixell(4, 1);
-        colLocarVaixell(3, 2);
-        colLocarVaixell(2, 3);
-        colLocarVaixell(1, 4);
+        colLocarVaixells(4, 1);
+        colLocarVaixells(3, 2);
+        colLocarVaixells(2, 3);
+        colLocarVaixells(1, 4);
     }
 
-    private void colLocarVaixell(int mida, int quantitat) {
+    private void colLocarVaixells(int midaVaixell, int quantitat) {
         for (int k = 0; k < quantitat; k++) {
             boolean colocat = false;
 
@@ -36,90 +37,88 @@ public class Tauler {
                 int fila = random.nextInt(MIDA);
                 int columna = random.nextInt(MIDA);
 
-                if (potColLocar(fila, columna, mida, horitzontal)) {
-                    posarVaixell(fila, columna, mida, horitzontal);
+                if (potColLocar(fila, columna, midaVaixell, horitzontal)) {
+                    posarVaixell(fila, columna, midaVaixell, horitzontal);
                     colocat = true;
                 }
             }
         }
     }
 
-    private boolean potColLocar(int fila, int columna, int mida, boolean horitzontal) {
+    private boolean potColLocar(int fila, int columna, int midaVaixell, boolean horitzontal) {
         if (horitzontal) {
-            if (columna + mida > MIDA) return false;
-            for (int j = columna; j < columna + mida; j++) {
-                if (tauler[fila][j] != '~') return false;
+            if (columna + midaVaixell > MIDA) {
+                return false;
+            }
+            for (int j = columna; j < columna + midaVaixell; j++) {
+                if (tauler[fila][j] != '~') {
+                    return false;
+                }
             }
         } else {
-            if (fila + mida > MIDA) return false;
-            for (int i = fila; i < fila + mida; i++) {
-                if (tauler[i][columna] != '~') return false;
+            if (fila + midaVaixell > MIDA) {
+                return false;
+            }
+            for (int i = fila; i < fila + midaVaixell; i++) {
+                if (tauler[i][columna] != '~') {
+                    return false;
+                }
             }
         }
         return true;
     }
 
-    private void posarVaixell(int fila, int columna, int mida, boolean horitzontal) {
+    private void posarVaixell(int fila, int columna, int midaVaixell, boolean horitzontal) {
         if (horitzontal) {
-            for (int j = columna; j < columna + mida; j++) {
+            for (int j = columna; j < columna + midaVaixell; j++) {
                 tauler[fila][j] = 'B';
             }
         } else {
-            for (int i = fila; i < fila + mida; i++) {
+            for (int i = fila; i < fila + midaVaixell; i++) {
                 tauler[i][columna] = 'B';
             }
         }
     }
 
-    public char[][] getTauler() {
-        return tauler;
-    }
-
-    public void mostrarTauler() {
-        System.out.print("    ");
-        for (int j = 1; j <= MIDA; j++) {
-            System.out.printf("%2d  ", j);
-        }
-        System.out.println();
-
-        for (int i = 0; i < MIDA; i++) {
-            System.out.print("  +");
-            for (int j = 0; j < MIDA; j++) {
-                System.out.print("---+");
-            }
-            System.out.println();
-
-            System.out.printf("%c |", (char) ('A' + i));
-            for (int j = 0; j < MIDA; j++) {
-                System.out.print(" " + tauler[i][j] + " |");
-            }
-            System.out.println();
+    public String processarTirada(String casella) {
+        if (!formatCorrecte(casella)) {
+            return "FORMAT INCORRECTE. Exemple: A1 o J10";
         }
 
-        System.out.print("  +");
-        for (int j = 0; j < MIDA; j++) {
-            System.out.print("---+");
-        }
-        System.out.println();
-    }
-    public String disparar(int fila, int col) {
+        int fila = casella.charAt(0) - 'A';
+        int columna = Integer.parseInt(casella.substring(1)) - 1;
 
-        if (fila < 0 || fila >= MIDA || col < 0 || col >= MIDA) {
-            return "FORA DE TAULER";
-        }
-
-        if (tauler[fila][col] == 'B') {
-            tauler[fila][col] = 'X';
+        if (tauler[fila][columna] == 'B') {
+            tauler[fila][columna] = 'X';
             return "TOCAT";
-        }
-
-        if (tauler[fila][col] == '~') {
-            tauler[fila][col] = 'O';
+        } else if (tauler[fila][columna] == '~') {
+            tauler[fila][columna] = 'O';
             return "AIGUA";
+        } else if (tauler[fila][columna] == 'X' || tauler[fila][columna] == 'O') {
+            return "CASELLA JA UTILITZADA";
         }
 
-        return "JA TIRAT";
+        return "ERROR";
     }
+
+    private boolean formatCorrecte(String casella) {
+        if (casella == null || casella.length() < 2 || casella.length() > 3) {
+            return false;
+        }
+
+        char fila = casella.charAt(0);
+        if (fila < 'A' || fila > 'J') {
+            return false;
+        }
+
+        try {
+            int columna = Integer.parseInt(casella.substring(1));
+            return columna >= 1 && columna <= 10;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     public boolean noQuedenBarcos() {
         for (int i = 0; i < MIDA; i++) {
             for (int j = 0; j < MIDA; j++) {
@@ -131,5 +130,31 @@ public class Tauler {
         return true;
     }
 
+    public void mostrarTauler() {
+        System.out.print("     ");
+        for (int j = 1; j <= MIDA; j++) {
+            System.out.printf("%-4d", j);
+        }
+        System.out.println();
 
+        for (int i = 0; i < MIDA; i++) {
+            System.out.print("   +");
+            for (int j = 0; j < MIDA; j++) {
+                System.out.print("---+");
+            }
+            System.out.println();
+
+            System.out.printf(" %c |", (char) ('A' + i));
+            for (int j = 0; j < MIDA; j++) {
+                System.out.print(" " + tauler[i][j] + " |");
+            }
+            System.out.println();
+        }
+
+        System.out.print("   +");
+        for (int j = 0; j < MIDA; j++) {
+            System.out.print("---+");
+        }
+        System.out.println();
+    }
 }
