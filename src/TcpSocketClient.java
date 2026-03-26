@@ -11,6 +11,14 @@ public class TcpSocketClient {
     private static final int MIDA = 10;
     private final char[][] taulerClient = new char[MIDA][MIDA];
 
+    // ANSI colors
+    private static final String RESET = "\u001B[0m";
+    private static final String BLUE = "\u001B[34m";
+    private static final String RED = "\u001B[31m";
+    private static final String YELLOW = "\u001B[33m";
+    private static final String WHITE = "\u001B[37m";
+    private static final String CYAN = "\u001B[36m";
+
     public TcpSocketClient() {
         inicialitzarTaulerClient();
     }
@@ -24,17 +32,13 @@ public class TcpSocketClient {
     }
 
     public void connect(String address, int port) {
-
-        Socket socket;
-        BufferedReader in;
-        PrintStream out;
-        Scanner scanner = new Scanner(System.in);
-
         try {
-            socket = new Socket(InetAddress.getByName(address), port);
+            Socket socket = new Socket(InetAddress.getByName(address), port);
 
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintStream(socket.getOutputStream());
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintStream out = new PrintStream(socket.getOutputStream());
+
+            Scanner scanner = new Scanner(System.in);
 
             System.out.println("Servidor: " + in.readLine());
             System.out.println("Servidor: " + in.readLine());
@@ -53,34 +57,32 @@ public class TcpSocketClient {
                     break;
                 }
 
-                processarRespostaServidor(request, serverData);
+                if (serverData.startsWith("AIGUA")) {
+                    marcarAigua(request);
+                    System.out.println(BLUE + "Resposta: AIGUA" + RESET);
 
-                if ("GUANYAT".equalsIgnoreCase(serverData)) {
-                    System.out.println("Has guanyat!");
-                    break;
-                }
+                } else if (serverData.startsWith("TOCAT")) {
+                    marcarTocat(request);
+                    System.out.println(YELLOW + "Resposta: TOCAT" + RESET);
 
-                if ("ENFONSAT".equalsIgnoreCase(serverData)) {
-                    String coordenades = in.readLine(); // ex: A1,A2
+                } else if (serverData.startsWith("ENFONSAT:")) {
+                    String coordenades = serverData.substring("ENFONSAT:".length());
                     marcarEnfonsat(coordenades);
-                    System.out.println("Resposta: ENFONSAT");
-                } else if ("GUANYAT".equalsIgnoreCase(serverData)) {
-                    System.out.println("Has guanyat!");
+                    System.out.println(RED + "Resposta: ENFONSAT" + RESET);
+
+                } else if (serverData.startsWith("GUANYAT:")) {
+                    String coordenades = serverData.substring("GUANYAT:".length());
+                    marcarEnfonsat(coordenades);
+                    mostrarTaulerClient();
+                    System.out.println(RED + "Resposta: ENFONSAT" + RESET);
+                    System.out.println(CYAN + "HAS GUANYAT!" + RESET);
                     break;
+
                 } else {
                     System.out.println("Resposta: " + serverData);
                 }
 
                 mostrarTaulerClient();
-
-                // si después de ENFONSAT el servidor manda GUANYAT
-                if ("ENFONSAT".equalsIgnoreCase(serverData)) {
-                    String possibleWin = in.readLine();
-                    if (possibleWin != null && "GUANYAT".equalsIgnoreCase(possibleWin)) {
-                        System.out.println("Has guanyat!");
-                        break;
-                    }
-                }
             }
 
             socket.close();
@@ -90,27 +92,19 @@ public class TcpSocketClient {
         }
     }
 
-    private void processarRespostaServidor(String request, String resposta) {
-        if (!formatCorrecte(request)) {
-            return;
+    private void marcarAigua(String casella) {
+        if (formatCorrecte(casella)) {
+            int fila = casella.charAt(0) - 'A';
+            int columna = Integer.parseInt(casella.substring(1)) - 1;
+            taulerClient[fila][columna] = '~';
         }
+    }
 
-        int fila = request.charAt(0) - 'A';
-        int columna = Integer.parseInt(request.substring(1)) - 1;
-
-        switch (resposta) {
-            case "AIGUA":
-                taulerClient[fila][columna] = '~';
-                break;
-            case "TOCAT":
-                taulerClient[fila][columna] = '1';
-                break;
-            case "CASELLA JA UTILITZADA":
-            case "FORMAT INCORRECTE. Exemple: A1 o J10":
-            case "FORA DE TAULER":
-                break;
-            default:
-                break;
+    private void marcarTocat(String casella) {
+        if (formatCorrecte(casella)) {
+            int fila = casella.charAt(0) - 'A';
+            int columna = Integer.parseInt(casella.substring(1)) - 1;
+            taulerClient[fila][columna] = '1';
         }
     }
 
@@ -161,9 +155,9 @@ public class TcpSocketClient {
 
             System.out.printf(" %c |", (char) ('A' + i));
             for (int j = 0; j < MIDA; j++) {
-                System.out.print(" " + taulerClient[i][j] + " |");
+                System.out.print(" " + colorCasella(taulerClient[i][j]) + " |");
             }
-            System.out.println();
+            System.out.println(RESET);
         }
 
         System.out.print("   +");
@@ -173,8 +167,21 @@ public class TcpSocketClient {
         System.out.println("\n");
     }
 
+    private String colorCasella(char c) {
+        return switch (c) {
+            case '~' -> BLUE + c + RESET;     // agua
+            case '1' -> YELLOW + c + RESET;   // tocado
+            case 'X' -> RED + c + RESET;      // hundido
+            case '#' -> WHITE + c + RESET;    // desconocido
+            default -> String.valueOf(c);
+        };
+    }
+
     public static void main(String[] args) {
         TcpSocketClient client = new TcpSocketClient();
         client.connect("localhost", 9090);
     }
 }
+
+
+

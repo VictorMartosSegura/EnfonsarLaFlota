@@ -115,7 +115,10 @@ public class Tauler {
             Vaixell vaixell = buscarVaixell(idVaixell);
 
             if (vaixell != null && vaixell.estaEnfonsat(tauler)) {
-                return "ENFONSAT\n" + vaixell.getCoordenadesText();
+                if (noQuedenBarcos()) {
+                    return "GUANYAT:" + vaixell.getCoordenadesText();
+                }
+                return "ENFONSAT:" + vaixell.getCoordenadesText();
             }
 
             return "TOCAT";

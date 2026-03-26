@@ -13,7 +13,6 @@ public class ServidorThread extends Thread {
 
     @Override
     public void run() {
-
         BufferedReader in = null;
         PrintStream out = null;
         String clientMessage;
@@ -44,12 +43,7 @@ public class ServidorThread extends Thread {
                     out.println(response);
                     out.flush();
 
-                    gameOver = tauler.noQuedenBarcos();
-
-                    if (gameOver) {
-                        out.println("GUANYAT");
-                        out.flush();
-                    }
+                    gameOver = response.startsWith("GUANYAT:");
                 }
 
             } while (clientMessage != null && !gameOver);
@@ -57,9 +51,15 @@ public class ServidorThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            try { if (in != null) in.close(); } catch (IOException ignored) {}
+            try {
+                if (in != null) in.close();
+            } catch (IOException ignored) {
+            }
             if (out != null) out.close();
-            try { if (clientSocket != null && !clientSocket.isClosed()) clientSocket.close(); } catch (IOException ignored) {}
+            try {
+                if (clientSocket != null && !clientSocket.isClosed()) clientSocket.close();
+            } catch (IOException ignored) {
+            }
 
             System.out.println("Client desconnectat: " + clientSocket.getRemoteSocketAddress());
         }
