@@ -169,10 +169,10 @@ public class TcpSocketClient {
 
     private String colorCasella(char c) {
         return switch (c) {
-            case '~' -> BLUE + c + RESET;     // agua
-            case '1' -> YELLOW + c + RESET;   // tocado
-            case 'X' -> RED + c + RESET;      // hundido
-            case '#' -> WHITE + c + RESET;    // desconocido
+            case '~' -> BLUE + c + RESET;
+            case '1' -> YELLOW + c + RESET;
+            case 'X' -> RED + c + RESET;
+            case '#' -> WHITE + c + RESET;
             default -> String.valueOf(c);
         };
     }
