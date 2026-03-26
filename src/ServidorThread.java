@@ -28,7 +28,7 @@ public class ServidorThread extends Thread {
             out.flush();
 
             System.out.println("\nNou tauler per al client: " + clientSocket.getRemoteSocketAddress());
-            tauler.mostrarTauler();
+            tauler.mostrarTaulerServidor();
 
             do {
                 clientMessage = in.readLine();
@@ -39,7 +39,7 @@ public class ServidorThread extends Thread {
                     String response = tauler.processarTirada(clientMessage);
 
                     System.out.println("Client " + clientSocket.getRemoteSocketAddress() + " -> " + clientMessage);
-                    tauler.mostrarTauler();
+                    tauler.mostrarTaulerServidor();
 
                     out.println(response);
                     out.flush();
@@ -47,7 +47,7 @@ public class ServidorThread extends Thread {
                     gameOver = tauler.noQuedenBarcos();
 
                     if (gameOver) {
-                        out.println("HAS GUANYAT! TOTS ELS VAIXELLS HAN ESTAT ENFONSATS");
+                        out.println("GUANYAT");
                         out.flush();
                     }
                 }
